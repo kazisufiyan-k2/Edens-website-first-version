@@ -1,7 +1,9 @@
 """
-Email service — sends notification emails via Resend (HTTP email API).
+Email service — sends notification emails via Brevo (HTTP email API).
 Works reliably on Render because it uses HTTPS, not blocked SMTP ports.
+Brevo free tier allows sending to ANY recipient (no domain verification needed).
 """
+
 # ---- Fix: force IPv4 (Render sometimes can't reach IPv6 addresses) ----
 import socket
 _original_getaddrinfo = socket.getaddrinfo
@@ -12,37 +14,48 @@ socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 import os
 import logging
-import resend
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 logger = logging.getLogger("edens.email")
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Edens Refrigeration and Air-Conditioning")
-FROM_ADDRESS = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+FROM_ADDRESS = os.getenv("BREVO_FROM_EMAIL", "")
 BUSINESS_NOTIFY_EMAIL = os.getenv("BUSINESS_NOTIFY_EMAIL", "")
 
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _is_configured() -> bool:
-    return bool(RESEND_API_KEY)
+    return bool(BREVO_API_KEY and FROM_ADDRESS)
 
 
 def send_email(to_email: str, subject: str, body: str) -> bool:
     if not _is_configured():
-        logger.warning(f"Resend not configured — skipping email to {to_email}")
+        logger.warning(f"Brevo not configured — skipping email to {to_email}")
         return False
     try:
-        resend.Emails.send({
-            "from": f"{SMTP_FROM_NAME} <{FROM_ADDRESS}>",
-            "to": [to_email],
-            "subject": subject,
-            "text": body,
-        })
+        response = requests.post(
+            BREVO_API_URL,
+            headers={
+                "accept": "application/json",
+                "api-key": BREVO_API_KEY,
+                "content-type": "application/json",
+            },
+            json={
+                "sender": {"name": SMTP_FROM_NAME, "email": FROM_ADDRESS},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "textContent": body,
+            },
+            timeout=15,
+        )
+        if response.status_code not in (200, 201):
+            logger.error(f"Brevo error sending to {to_email}: {response.status_code} {response.text}")
+            return False
         return True
     except Exception as exc:
         logger.error(f"Failed to send email to {to_email}: {exc}")
