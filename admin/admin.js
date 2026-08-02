@@ -1,7 +1,7 @@
 // ============================================================
 // EDENS ADMIN DASHBOARD
 // ============================================================
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://edens-backend-8yji.onrender.com";
 const TOKEN_KEY = "edens_admin_token";
 
 // ---------------- AUTH ----------------
