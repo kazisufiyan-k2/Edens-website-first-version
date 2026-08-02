@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Edens Refrigeration & Air-Conditioning</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ===================== LOGIN SCREEN ===================== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <h1>Edens Admin</h1>
+    <p>Sign in to manage enquiries and reviews.</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" required>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" required>
+      </div>
+      <button type="submit" class="btn-primary btn-block">Sign In</button>
+      <div id="login-error" class="error-msg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div id="dashboard" class="dashboard hidden">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Edens Admin</div>
+    <nav>
+      <button class="nav-item active" data-tab="overview">Overview</button>
+      <button class="nav-item" data-tab="enquiries">Enquiries</button>
+      <button class="nav-item" data-tab="reviews">Reviews (AI)</button>
+    </nav>
+    <button id="logout-btn" class="logout-btn">Log Out</button>
+  </aside>
+
+  <main class="main-panel">
+
+    <!-- ---- OVERVIEW TAB ---- -->
+    <section id="tab-overview" class="tab-panel active">
+      <h2>Customer Satisfaction Overview</h2>
+      <p class="sub">AI-generated summary based on all submitted reviews.</p>
+      <div class="stat-grid" id="insights-grid">
+        <div class="stat-card"><span class="stat-label">Total Reviews</span><span class="stat-value" id="stat-total">—</span></div>
+        <div class="stat-card"><span class="stat-label">Average Rating</span><span class="stat-value" id="stat-avg">—</span></div>
+        <div class="stat-card"><span class="stat-label">Positive</span><span class="stat-value stat-positive" id="stat-pos">—</span></div>
+        <div class="stat-card"><span class="stat-label">Negative</span><span class="stat-value stat-negative" id="stat-neg">—</span></div>
+      </div>
+      <div class="insight-banner" id="insight-banner">
+        <span class="status-pill" id="insight-status">—</span>
+        <p id="insight-text">Loading insights...</p>
+      </div>
+    </section>
+
+    <!-- ---- ENQUIRIES TAB ---- -->
+    <section id="tab-enquiries" class="tab-panel">
+      <h2>Enquiries</h2>
+      <p class="sub">All quote requests submitted via the website.</p>
+      <div id="enquiries-list" class="list"></div>
+    </section>
+
+    <!-- ---- REVIEWS TAB ---- -->
+    <section id="tab-reviews" class="tab-panel">
+      <h2>Reviews &amp; AI Suggestions</h2>
+      <p class="sub">Every review is auto-analyzed for sentiment. Approve to publish on the site, or send an AI-drafted reply.</p>
+      <div id="reviews-list" class="list"></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
