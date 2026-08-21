@@ -119,7 +119,7 @@ app needs to change.
 ## 5. Before Going Live
 
 - [ ] Replace placeholder phone number (`+64 00 000 0000`) across all pages
-- [ ] Replace placeholder email (`info@edensrefrigeration.co.nz`) across all pages
+- [ ] Replace placeholder email (`edensqueenstownltd@gmail.com`) across all pages
 - [ ] Add real photos to `frontend/images/`
 - [ ] Set real SMTP credentials in `backend/.env`
 - [ ] Change `ADMIN_PASSWORD` and `ADMIN_TOKEN` in `backend/.env` to something secure

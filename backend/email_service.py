@@ -1,61 +1,51 @@
 """
-Email service — sends notification emails via Brevo (HTTP email API).
-Works reliably on Render because it uses HTTPS, not blocked SMTP ports.
-Brevo free tier allows sending to ANY recipient (no domain verification needed).
+Email service — sends notification emails via SMTP.
+
+Set real SMTP_* values in your .env / Dokploy environment variables.
+Example for Gmail: use an "App Password", not your normal password.
+
+If SMTP is not configured yet, emails are safely skipped and logged
+to the console instead of crashing the request.
 """
-
-# ---- Fix: force IPv4 (Render sometimes can't reach IPv6 addresses) ----
-import socket
-_original_getaddrinfo = socket.getaddrinfo
-def _ipv4_only_getaddrinfo(*args, **kwargs):
-    responses = _original_getaddrinfo(*args, **kwargs)
-    return [r for r in responses if r[0] == socket.AF_INET]
-socket.getaddrinfo = _ipv4_only_getaddrinfo
-
 import os
+import smtplib
 import logging
-import requests
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 
 load_dotenv()
 
 logger = logging.getLogger("edens.email")
 
-BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Edens Refrigeration and Air-Conditioning")
-FROM_ADDRESS = os.getenv("BREVO_FROM_EMAIL", "")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "")
 BUSINESS_NOTIFY_EMAIL = os.getenv("BUSINESS_NOTIFY_EMAIL", "")
-
-BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _is_configured() -> bool:
-    return bool(BREVO_API_KEY and FROM_ADDRESS)
+    return bool(SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD and SMTP_FROM_EMAIL)
 
 
 def send_email(to_email: str, subject: str, body: str) -> bool:
     if not _is_configured():
-        logger.warning(f"Brevo not configured — skipping email to {to_email}")
+        logger.warning(f"SMTP not configured — skipping email to {to_email}")
         return False
     try:
-        response = requests.post(
-            BREVO_API_URL,
-            headers={
-                "accept": "application/json",
-                "api-key": BREVO_API_KEY,
-                "content-type": "application/json",
-            },
-            json={
-                "sender": {"name": SMTP_FROM_NAME, "email": FROM_ADDRESS},
-                "to": [{"email": to_email}],
-                "subject": subject,
-                "textContent": body,
-            },
-            timeout=15,
-        )
-        if response.status_code not in (200, 201):
-            logger.error(f"Brevo error sending to {to_email}: {response.status_code} {response.text}")
-            return False
+        msg = MIMEMultipart()
+        msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.sendmail(SMTP_FROM_EMAIL, [to_email], msg.as_string())
         return True
     except Exception as exc:
         logger.error(f"Failed to send email to {to_email}: {exc}")
